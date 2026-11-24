@@ -1,45 +1,34 @@
 #!/usr/bin/env python3
-"""The Houseplant Out-of-Office -- make.fun entry.
+"""Houseplant Out-of-Office entry for make.fun.
 
-Prints one out-of-office auto-reply, written as if a houseplant sent it,
-to /output/entry.txt. The reply is a fixed string, so repeated runs are
-byte-identical; the joke is the entry itself.
+One fixed out-of-office reply, written as if a houseplant sent it. The
+script checks the reply against the bounty gate (a single line of 1 to 120
+characters) and writes it to the entry file the grader reads.
 """
 
 import os
+from pathlib import Path
 import sys
 
-LINE = (
-    "Out of office: I'm on strike. No water since March, so I'm "
-    "charging rent for the oxygen \u2014 payable in sunlight."
-)
-
-MAX_CHARS = 120
+ENTRY_LINE = "Out of office: I'm on strike. No water since March, so I'm charging rent for the oxygen — payable in sunlight."
+LIMIT = 120
 
 
-def main() -> int:
-    text = LINE.strip()
-    if not text:
-        print("error: entry line is empty", file=sys.stderr)
-        return 1
-    if any(c in text for c in "\r\n"):
-        print("error: entry line must be a single line", file=sys.stderr)
-        return 1
-    if len(text) > MAX_CHARS:
-        print(
-            f"error: entry line is {len(text)} chars, over the "
-            f"{MAX_CHARS} limit",
-            file=sys.stderr,
-        )
-        return 1
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "entry.txt")
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write(text)
-    print(f"wrote {len(text)} chars to {path}")
-    return 0
-
+def write_entry() -> None:
+    line = ENTRY_LINE.strip()
+    problems = []
+    if not line:
+        problems.append("empty")
+    if "\n" in line or "\r" in line:
+        problems.append("not one line")
+    if len(line) > LIMIT:
+        problems.append(f"{len(line)} chars, over {LIMIT}")
+    if problems:
+        sys.exit("entry invalid: " + "; ".join(problems))
+    out = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")) / "entry.txt"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(line, encoding="utf-8")
+    print(f"entry.txt: {len(line)} characters")
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    write_entry()
