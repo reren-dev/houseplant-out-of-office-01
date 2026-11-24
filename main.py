@@ -28,6 +28,10 @@ def write_entry() -> None:
     out = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")) / "entry.txt"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(line, encoding="utf-8")
+    # Read it back: the grader runs the program twice and compares bytes,
+    # so a write that silently differs from the line must fail loudly here.
+    if out.read_text(encoding="utf-8") != line:
+        sys.exit("entry mismatch: written file differs from the line")
     print(f"entry.txt: {len(line)} characters")
 
 if __name__ == "__main__":
